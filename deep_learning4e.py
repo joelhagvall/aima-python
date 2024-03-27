@@ -535,22 +535,17 @@ def SimpleRNNLearner(train_data, val_data, epochs=2, verbose=False):
     :return: a keras model
     """
 
-    total_inputs = 5000
-    input_length = 500
-
-    # init data
-    X_train, y_train = train_data
-    X_val, y_val = val_data
-
-    # init a the sequential network (embedding layer, rnn layer, dense layer)
+    max_review_length = max(len(review) for review in train_data[0])
+    total_inputs = max([max(sequence) for sequence in train_data[0]]) + 1
+    
     model = Sequential()
-    model.add(Embedding(total_inputs, 32, input_length=input_length))
-    model.add(SimpleRNN(units=128))
+    model.add(Embedding(total_inputs, 32))  # Remove input_length parameter
+    model.add(SimpleRNN(8))
     model.add(Dense(1, activation='sigmoid'))
-    model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
-
-    # train the model
-    model.fit(X_train, y_train, validation_data=(X_val, y_val), epochs=epochs, batch_size=128, verbose=verbose)
+    
+    model.compile(optimizer='rmsprop', loss='binary_crossentropy', metrics=['accuracy'])
+    
+    model.build(input_shape=(None, max_review_length))
 
     return model
 
@@ -575,7 +570,7 @@ def AutoencoderLearner(inputs, encoding_size, epochs=200, verbose=False):
     model.add(Dense(input_size, activation='relu', kernel_initializer='random_uniform', bias_initializer='ones'))
 
     # update model with sgd
-    sgd = optimizers.SGD(lr=0.01)
+    sgd = optimizers.SGD(learning_rate=0.01)
     model.compile(loss='mean_squared_error', optimizer=sgd, metrics=['accuracy'])
 
     # train the model
